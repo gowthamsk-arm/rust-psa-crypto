@@ -287,6 +287,18 @@ mod operations {
         for (_, [sym]) in re.captures_iter(&stdout).map(|c| c.extract()) {
             syms.push(sym);
         }
+        
+        // For i686 platform, there are repeated symbols of pattern 
+        // __x86.get_pc_thunk.*. This causes the i686-unknown-linux-gnu
+        // tool to fail. This condition removes such repeated symbols. 
+        if env::var("TARGET").unwrap() == "i686-unknown-linux-gnu"{
+            syms.retain(|&x| x != "__x86.get_pc_thunk.ax");
+            syms.retain(|&x| x != "__x86.get_pc_thunk.bx");
+            syms.retain(|&x| x != "__x86.get_pc_thunk.cx");
+            syms.retain(|&x| x != "__x86.get_pc_thunk.dx");
+            syms.retain(|&x| x != "__x86.get_pc_thunk.si");
+            syms.retain(|&x| x != "__x86.get_pc_thunk.di");         
+        }
 
         // Generate a file for objcopy containing "old new" in each line.
         let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
