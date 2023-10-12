@@ -300,11 +300,13 @@ mod operations {
             }
         }
 
+        let objcopy = get_target_objcopy();
+
         for (from, to) in liblist.into_iter() {
             std::fs::create_dir_all(to.parent().unwrap())?;
 
             // Run objcopy to copy library and rename symbols.
-            let status = std::process::Command::new("objcopy")
+            let status = std::process::Command::new(objcopy.clone())
                 .args([
                     "--redefine-syms",
                     symfile.to_str().unwrap(),
@@ -319,5 +321,24 @@ mod operations {
         }
 
         Ok(())
+    }
+
+    // Get the objcopy tool from cross compiler toolchain if target is different
+    fn get_target_objcopy() -> String {
+        let target_platform = env::var("TARGET").unwrap();
+        let host_platform = env::var("HOST").unwrap();
+        let mut objcopy = "objcopy";
+
+        #[allow(unreachable_patterns)]
+        if target_platform != host_platform {
+            objcopy = match target_platform.as_str(){
+                "aarch64-unknown-linux-gnu"  => "aarch64-linux-gnu-objcopy",
+                "armv7-unknown-linux-gnueabihf"  => "arm-linux-gnueabihf-objcopy",
+                "i686-unknown-linux-gnu"  => "i686-linux-gnu-objcopy",
+                _ => "Unsupported",
+            }
+        }
+
+        objcopy.to_string()
     }
 }
